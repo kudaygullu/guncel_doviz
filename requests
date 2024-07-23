@@ -1,0 +1,78 @@
+import requests
+import socket
+import time
+import tkinter as tk
+from bs4 import BeautifulSoup
+
+# Döviz çiftleri listesi
+para_birimleri = [
+    "USD/TRY",  # United States Dollar
+    "EUR/TRY",  # Euro
+    "JPY/TRY",  # Japanese Yen
+    "GBP/TRY",  # British Pound Sterling
+    "AUD/TRY",  # Australian Dollar
+    "CAD/TRY",  # Canadian Dollar
+    "CHF/TRY",  # Swiss Franc
+    "CNY/TRY",  # Chinese Yuan
+    "SEK/TRY",  # Swedish Krona
+    "NZD/TRY",  # New Zealand Dollar
+    "NOK/TRY",  # Norwegian Krone
+    "KRW/TRY",  # South Korean Won
+    "RUB/TRY",  # Russian Ruble
+]
+
+# İnternet bağlantısını kontrol et
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("www.google.com", 80))
+    s.close()
+    print("Bağlanılıyor")
+except Exception:
+    print("Lütfen İnternet Bağlantınızı Kontrol Edin!")
+    time.sleep(3)
+    exit()
+
+
+def get_exchange_rate():
+    selected_pair = pair_var.get().split('/')[0]  # "USD/TRY" -> "USD"
+
+    # URL'den döviz kuru verilerini al
+    url = "https://kur.doviz.com/"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.content, "html.parser")
+
+    # Seçilen döviz çiftine ait veriyi al
+    doviz_kuru_elementi = soup.find("td", {"data-socket-key": selected_pair, "data-socket-attr": "bid"})
+
+    if doviz_kuru_elementi:
+        doviz_kuru = doviz_kuru_elementi.text.strip()
+        result_label.config(text=f"{pair_var.get()} Döviz Kuru: {doviz_kuru} ₺")
+    else:
+        result_label.config(text="Seçilen döviz kuru bulunamadı.")
+
+
+# Tkinter penceresi oluştur
+window = tk.Tk()
+window.minsize(height=300, width=400)
+window.title("DÖVİZ TAKİP PROGRAMI(Bugün)")
+window.configure(background="white")
+
+label = tk.Label(window, text="Borsa", font=('arial', 15, 'bold'), bg="white")
+label.pack()
+
+# OptionMenu oluştur
+pair_var = tk.StringVar(window)
+pair_var.set(para_birimleri[0])  # Varsayılan olarak ilk döviz çiftini seç
+
+option_menu = tk.OptionMenu(window, pair_var, *para_birimleri)
+option_menu.pack(pady=20)
+
+# Döviz kurunu getiren buton
+fetch_button = tk.Button(window, text="Döviz Kurunu Getir", command=get_exchange_rate)
+fetch_button.pack(pady=20)
+
+# Sonucu göstermek için etiket
+result_label = tk.Label(window, text="", font=('arial', 12), bg="white")
+result_label.pack(pady=20)
+
+window.mainloop()
